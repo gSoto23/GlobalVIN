@@ -5,10 +5,11 @@ from contextlib import asynccontextmanager
 from app.core.config import settings
 from app.api.v1.api import api_router
 from app.db.session import engine, Base
+from app.core.middleware import CorrelationIDMiddleware, setup_exception_handlers
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Create tables in SQLite (development only)
+    # Startup: Create tables in SQLite/Postgres (development only)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield
@@ -22,6 +23,12 @@ app = FastAPI(
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
     lifespan=lifespan
 )
+
+# Setup custom exception handlers for RACSA format
+setup_exception_handlers(app)
+
+# Add CorrelationID middleware
+app.add_middleware(CorrelationIDMiddleware)
 
 # Set all CORS enabled origins
 if settings.BACKEND_CORS_ORIGINS:

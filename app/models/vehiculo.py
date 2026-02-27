@@ -12,7 +12,7 @@ class VehiculoEstudio(Base):
     es_estudio_sin_registros = Column(Boolean, default=False)
     
     # Store dynamic metadata as JSON
-    metadatos_vehiculo = Column(JSON, nullable=True)
+    especificaciones_vehiculo = Column(JSON, nullable=True)
     detalle_estudio = Column(JSON, nullable=True)
     
     # PDF storage references

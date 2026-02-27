@@ -7,7 +7,7 @@ import datetime
 from app.db.session import get_db
 from app.models.vehiculo import VehiculoEstudio, Trazabilidad
 from app.schemas.vehiculo import EstudioBaseResponse, EstudioCompletoResponse, PdfInfo
-from app.core.security import verify_token
+from app.api.v1.endpoints.auth import verify_token
 from app.services.provider_client import orchestrate_vin_search
 from app.services.normalizer import normalize_provider_data
 
@@ -97,7 +97,7 @@ async def get_estudio_completo(
                 identificacion=identificacion,
                 tiene_estudios=True,
                 es_estudio_sin_registros=es_sin_registros,
-                metadatos_vehiculo=meta.model_dump(),
+                especificaciones_vehiculo=meta.model_dump(),
                 detalle_estudio=detalle.model_dump(),
                 url_pdf="local://blob_storage/" + identificacion + ".pdf",
                 pdf_hash="sha256:dummyhash123", # Usually hashlib.sha256(raw_pdf_content.encode()).hexdigest()
@@ -118,21 +118,55 @@ async def get_estudio_completo(
             )
             db.add(trazabilidad)
             await db.commit()
-            raise HTTPException(status_code=502, detail="External Provider Error")
+            raise HTTPException(status_code=502, detail={
+                "codigo": "ERROR_PROVEEDOR",
+                "mensaje": "Error en integracion con proveedor",
+                "detalle": str(e),
+                "correlationId": "TBD"
+            })
+    else:
+        # If loaded from DB, extract meta, detalle, es_sin_registros for PDF generation
+        meta = estudio_db.especificaciones_vehiculo
+        detalle = estudio_db.detalle_estudio
+        es_sin_registros = estudio_db.es_estudio_sin_registros
 
-    # Prepare PDF Output
-    # In reality you would load the Base64 from S3 here
-    mock_base64_pdf = "JVBERi0xLjQKJ_MOCK_PDF_CONTENT..." if if_llamada_externa else "JVBERi0xLjQKJ_LOADED_FROM_CACHE..."
+    # Generate real PDF using the new service
+    from app.services.pdf_generator import generate_racsa_pdf
+    import base64
     
+    try:
+        # Generate the PDF file on disk
+        pdf_path, pdf_hash, pdf_size = await generate_racsa_pdf(
+            vin=identificacion,
+            meta=meta,
+            detalle=detalle,
+            es_sin_registros=es_sin_registros
+        )
+        
+        # S3 MOCK / Base64 Output
+        # In a real environment, we'd upload 'pdf_path' to S3 and return a URL.
+        # Here we encode the PDF in Base64 (or return a generic string to save space)
+        with open(pdf_path, "rb") as f:
+            pdf_bytes = f.read()
+        
+        # Don't return full raw PDF in JSON due to size, just a placeholder or small Base64 head
+        # For Racsa we return the base64.
+        mock_base64_pdf = base64.b64encode(pdf_bytes).decode('utf-8')
+        
+    except Exception as e:
+        print(f"Error generating PDF: {e}")
+        pdf_hash = "sha256:ERROR"
+        pdf_size = 0
+        mock_base64_pdf = "JVBERi0xLjQKJ_ERROR_GENERATING_PDF..."
+
     pdf_info = PdfInfo(
         content=mock_base64_pdf,
-        tamañoBytes=estudio_db.pdf_size_bytes,
-        hash=estudio_db.pdf_hash,
-        fechaGeneracion=estudio_db.ultima_fecha_estudio,
-        yaFacturadoPreviamente=estudio_db.ya_facturado_previamente
+        tamañoBytes=pdf_size,
+        hash=pdf_hash,
+        fechaGeneracion=datetime.datetime.now(datetime.timezone.utc),
+        yaFacturadoPreviamente=estudio_db.ya_facturado_previamente if if_llamada_externa else True
     )
 
-    # Log Traceability
     trazabilidad = Trazabilidad(
         identificacion=identificacion,
         endpoint="/api/v1/vehiculos/estudios",
@@ -149,7 +183,7 @@ async def get_estudio_completo(
         tieneEstudios=estudio_db.tiene_estudios,
         ultimaFechaEstudio=estudio_db.ultima_fecha_estudio,
         esEstudioSinRegistros=estudio_db.es_estudio_sin_registros,
-        metadatosVehiculo=estudio_db.metadatos_vehiculo,
+        especificacionesVehiculo=estudio_db.especificaciones_vehiculo,
         detalleEstudio=estudio_db.detalle_estudio,
         pdf=pdf_info
     )

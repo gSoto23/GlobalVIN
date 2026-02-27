@@ -6,58 +6,82 @@ from app.services.wmi_detector import get_vehicle_origin_from_vin
 
 async def fetch_vinaudit_data(vin: str) -> Dict[str, Any]:
     """
-    Mock integration for VinAudit API (United States).
-    In production, this would make an actual httpx request to VinAudit.
+    Integration for VinAudit API (United States).
     """
-    await asyncio.sleep(1.5)  # Simulate network latency
-    return {
-        "success": True,
-        "mode": "live",
-        "vehicle": {
-            "make": "FORD",
-            "model": "F-150",
-            "year": 2021,
-            "trim": "XLT",
-            "country": "United States",
-            "fuel_type": "Gasoline",
-            "engine": "3.5L V6 Turbo",
-            "transmission": "10-Speed Automatic",
-            "body_style": "SuperCrew Cab",
-        },
-        "history": {
-            "titles": 2,
-            "accidents": [],
-            "salvage": False,
-            "theft": False,
-            "auction_records": True,
-            "liens": 0
-        }
-    }
-
-async def fetch_carstat_data(vin: str) -> Dict[str, Any]:
-    """
-    Mock integration for CarStat or Encar API (South Korea).
-    """
-    await asyncio.sleep(2.0)  # Simulate network latency
-    return {
-        "status": "success",
-        "data": {
-            "specs": {
-                "brand": "HYUNDAI",
-                "model_name": "TUCSON",
-                "production_year": 2022,
-                "engine_type": "1.6 Turbo GDi",
-                "color": "White",
-                "origin": "South Korea",
+    api_key = settings.VINAUDIT_API_KEY
+    if not api_key or api_key.startswith("dummy"):
+        # Not configured properly, fallback to mock
+        await asyncio.sleep(1.0)
+        return {
+            "success": True,
+            "vehicle": {
+                "make": "FORD MOCK",
+                "model": "F-150 MOCK",
+                "year": 2021,
+                "country": "United States",
+                "engine": "3.5L V6 Turbo",
             },
-            "history_summary": {
-                "has_accident_history": True,
-                "total_loss_reported": False,
-                "theft_reported": False,
-                "auction_listings_found": 1
+            "history": {
+                "accidents": [],
+                "salvage": False,
+                "theft": False,
+                "liens": 0
             }
         }
+
+    url = f"https://marketvalue.vinaudit.com/getmarketvalue.php"
+    params = {
+        "key": api_key,
+        "vin": vin,
+        "format": "json"
     }
+
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(url, params=params, timeout=15.0)
+            response.raise_for_status()
+            return response.json()
+        except httpx.HTTPError as e:
+            # Fallback to mock data on error for testing purposes
+            return {"success": False, "error": str(e), "vehicle": {"make": "ERROR"}, "history": {}}
+
+async def fetch_carapis_data(vin: str) -> Dict[str, Any]:
+    """
+    Integration for CarApis (Encar) API (South Korea).
+    """
+    api_key = settings.CARAPIS_API_KEY
+    if not api_key or api_key.startswith("dummy"):
+        # Not configured properly, fallback to mock to prevent crashing
+        await asyncio.sleep(1.0)
+        return {"status": "mock", "data": {"history_summary": {"has_accident_history": True}, "specs": {"brand": "MOCK KOREAN"}}}
+
+    # According to new Telegram discovery: https://api2.carapis.com/apix/data_encar_api/vehicles/{vin}/
+    url = f"https://api2.carapis.com/apix/data_encar_api/vehicles/{vin}/"
+    headers = {
+        "x-api-key": api_key,
+        "accept": "application/json"
+    }
+    
+    # We no longer pass car_no as a query parameter because it is now in the path
+    params = {}
+
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(url, headers=headers, params=params, timeout=30.0)
+            
+            # If CarApis returns 404 due to the current Cloudflare issue, we catch it
+            if response.status_code == 404:
+                return {"status": "mock_fallback_404", "data": {"history_summary": {"has_accident_history": False}, "specs": {"brand": "CARAPIS 404 MOCK"}}}
+                
+            response.raise_for_status()
+            
+            # Since data format will be different, we should return the raw json.
+            # Warning: normalizer needs to adapt to the exact JSON structure once CarApis works.
+            return response.json()
+            
+        except httpx.HTTPError as e:
+            # Fallback to mock data for now so the user can test the API flow
+            return {"status": "error_fallback", "error": str(e), "data": {"history_summary": {}, "specs": {"brand": "ERROR MOCK"}}}
 
 async def orchestrate_vin_search(vin: str) -> Tuple[Dict[str, Any], str, str]:
     """
@@ -67,8 +91,8 @@ async def orchestrate_vin_search(vin: str) -> Tuple[Dict[str, Any], str, str]:
     origin = get_vehicle_origin_from_vin(vin)
     
     if origin == "South Korea":
-        data = await fetch_carstat_data(vin)
-        provider = "CarStat"
+        data = await fetch_carapis_data(vin)
+        provider = "CarApis"
         # Mocking a PDF generation/fetch
         # In reality, the provider might return a PDF link we have to download
         pdf_content = "JVBERi0xLjQKJ_MOCK_PDF_CONTENT_KOREA_..." 

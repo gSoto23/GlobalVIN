@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from typing import Any
@@ -10,11 +10,14 @@ from app.schemas.vehiculo import EstudioBaseResponse, EstudioCompletoResponse, P
 from app.api.v1.endpoints.auth import verify_token
 from app.services.provider_client import orchestrate_vin_search
 from app.services.normalizer import normalize_provider_data
+from app.core.limiter import limiter
 
 router = APIRouter()
 
 @router.get("/existencia", response_model=EstudioBaseResponse)
+@limiter.limit("20/minute")
 async def check_estudio_existencia(
+    request: Request,
     tipoIdentificacion: str = Query(..., description="VIN, CHASIS, SERIE"),
     identificacion: str = Query(..., description="El valor del VIN/chasis/número de serie"),
     db: AsyncSession = Depends(get_db),
@@ -61,7 +64,9 @@ async def check_estudio_existencia(
     )
 
 @router.get("", response_model=EstudioCompletoResponse)
+@limiter.limit("10/minute")
 async def get_estudio_completo(
+    request: Request,
     tipoIdentificacion: str = Query(..., description="VIN, CHASIS, SERIE"),
     identificacion: str = Query(..., description="El valor del VIN/chasis/número de serie"),
     db: AsyncSession = Depends(get_db),
@@ -85,7 +90,7 @@ async def get_estudio_completo(
         # 2. Not found locally, call External Provider
         if_llamada_externa = True
         try:
-            raw_data, proveedor_usado, raw_pdf_content = await orchestrate_vin_search(identificacion)
+            raw_data, proveedor_usado = await orchestrate_vin_search(identificacion)
             
             # Normalize Response
             meta, detalle, es_sin_registros = normalize_provider_data(proveedor_usado, raw_data)
@@ -100,8 +105,8 @@ async def get_estudio_completo(
                 especificaciones_vehiculo=meta.model_dump(),
                 detalle_estudio=detalle.model_dump(),
                 url_pdf="local://blob_storage/" + identificacion + ".pdf",
-                pdf_hash="sha256:dummyhash123", # Usually hashlib.sha256(raw_pdf_content.encode()).hexdigest()
-                pdf_size_bytes=len(raw_pdf_content),
+                pdf_hash="sha256:dummyhash123", 
+                pdf_size_bytes=0, # Updated after real generation
                 ultima_fecha_estudio=now_utc,
                 ya_facturado_previamente=True
             )

@@ -45,61 +45,79 @@ async def fetch_vinaudit_data(vin: str) -> Dict[str, Any]:
             # Fallback to mock data on error for testing purposes
             return {"success": False, "error": str(e), "vehicle": {"make": "ERROR"}, "history": {}}
 
-async def fetch_carapis_data(vin: str) -> Dict[str, Any]:
-    """
-    Integration for CarApis (Encar) API (South Korea).
-    """
-    api_key = settings.CARAPIS_API_KEY
-    if not api_key or api_key.startswith("dummy"):
-        # Not configured properly, fallback to mock to prevent crashing
-        await asyncio.sleep(1.0)
-        return {"status": "mock", "data": {"history_summary": {"has_accident_history": True}, "specs": {"brand": "MOCK KOREAN"}}}
+import hashlib
 
-    # According to new Telegram discovery: https://api2.carapis.com/apix/data_encar_api/vehicles/{vin}/
-    url = f"https://api2.carapis.com/apix/data_encar_api/vehicles/{vin}/"
-    headers = {
-        "x-api-key": api_key,
-        "accept": "application/json"
-    }
+async def fetch_vincario_data(vin: str) -> Dict[str, Any]:
+    """
+    Integration for Vincario API (International/Korea).
+    """
+    api_key = settings.VINCARIO_API_KEY
+    secret_key = settings.VINCARIO_SECRET_KEY
     
-    # We no longer pass car_no as a query parameter because it is now in the path
-    params = {}
+    if not api_key or not secret_key or api_key.startswith("dummy"):
+        # Not configured properly, fallback to mock
+        await asyncio.sleep(1.0)
+        return {"status": "mock", "data": {"error": False, "Decode": [{"label": "Make", "value": "MOCK KOREAN VINCARIO"}]}}
+
+    # Vincario requires VIN in uppercase
+    vin_upper = vin.upper()
+    endpoint_id = "decode"
+    
+    # Control sum: first 10 characters of SHA1 hash of: VIN|ID|API key|Secret key
+    raw_string = f"{vin_upper}|{endpoint_id}|{api_key}|{secret_key}"
+    control_sum = hashlib.sha1(raw_string.encode('utf-8')).hexdigest()[:10]
+
+    url = f"https://api.vincario.com/3.2/{api_key}/{control_sum}/{endpoint_id}/{vin_upper}.json"
 
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.get(url, headers=headers, params=params, timeout=30.0)
+            response = await client.get(url, timeout=30.0)
+            data = response.json()
             
-            # If CarApis returns 404 due to the current Cloudflare issue, we catch it
-            if response.status_code == 404:
-                return {"status": "mock_fallback_404", "data": {"history_summary": {"has_accident_history": False}, "specs": {"brand": "CARAPIS 404 MOCK"}}}
+            # Vincario returns "error": true or false
+            if data.get("error"):
+                # Bad VIN or validation failure
+                return {"status": "error_fallback", "error": str(data), "data": {}}
                 
             response.raise_for_status()
-            
-            # Since data format will be different, we should return the raw json.
-            # Warning: normalizer needs to adapt to the exact JSON structure once CarApis works.
-            return response.json()
+            return {"status": "success", "data": data}
             
         except httpx.HTTPError as e:
-            # Fallback to mock data for now so the user can test the API flow
-            return {"status": "error_fallback", "error": str(e), "data": {"history_summary": {}, "specs": {"brand": "ERROR MOCK"}}}
+            # Fallback to mock data on HTTP failure
+            return {"status": "error_fallback", "error": str(e), "data": {}}
 
-async def orchestrate_vin_search(vin: str) -> Tuple[Dict[str, Any], str, str]:
+async def fetch_vinaudit_data(vin: str) -> Dict[str, Any]:
     """
-    Determines the origin, calls the correct provider, and returns:
-    (raw_provider_data, provider_name, raw_pdf_content)
+    Integration for VinAudit API (USA).
     """
-    origin = get_vehicle_origin_from_vin(vin)
-    
-    if origin == "South Korea":
-        data = await fetch_carapis_data(vin)
-        provider = "CarApis"
-        # Mocking a PDF generation/fetch
-        # In reality, the provider might return a PDF link we have to download
-        pdf_content = "JVBERi0xLjQKJ_MOCK_PDF_CONTENT_KOREA_..." 
+    api_key = settings.VINAUDIT_API_KEY
+    if not api_key or api_key.startswith("dummy"):
+        await asyncio.sleep(1.0)
+        return {"status": "mock", "data": {"vehicle": {"make": "MOCK USA VEHICLE"}}}
+
+    # VinAudit standard endpoint
+    url = f"https://api.vinaudit.com/v2/pullreport"
+    params = {"key": api_key, "vin": vin, "format": "json"}
+
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(url, params=params, timeout=30.0)
+            response.raise_for_status()
+            return response.json()
+        except httpx.HTTPError as e:
+            return {"status": "error_fallback", "error": str(e), "data": {}}
+
+async def orchestrate_vin_search(vin: str) -> Tuple[Dict[str, Any], str]:
+    """
+    Routes the VIN to the appropriate provider based on its origin (e.g. 1st char).
+    """
+    # Ex: 1, 4, 5 = USA; K = Korea
+    # If the VIN starts with K, route to Vincario (Korea)
+    # If it starts with 1, 4, 5, route to VinAudit (USA)
+    if vin.upper().startswith("K"):
+        data = await fetch_vincario_data(vin)
+        return data, "Vincario"
     else:
-        # Defaulting to US provider (VinAudit) for 'United States' or 'Other'
+        # Defaulting to VinAudit for USA and others for this business case
         data = await fetch_vinaudit_data(vin)
-        provider = "VinAudit"
-        pdf_content = "JVBERi0xLjQKJ_MOCK_PDF_CONTENT_USA_..."
-
-    return data, provider, pdf_content
+        return data, "VinAudit"

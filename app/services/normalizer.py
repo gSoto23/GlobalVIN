@@ -54,46 +54,38 @@ def normalize_vinaudit_response(raw_data: Dict[str, Any]) -> Tuple[Especificacio
 
     return meta, detalle, es_sin_registros
 
-def normalize_carapis_response(raw_data: Dict[str, Any]) -> Tuple[EspecificacionesVehiculo, DetalleEstudio, bool]:
+def normalize_vincario_response(raw_data: Dict[str, Any]) -> Tuple[EspecificacionesVehiculo, DetalleEstudio, bool]:
     """
-    Transforms CarApis (Encar) JSON into the required format.
+    Transforms Vincario (Korea/Intl) JSON into the required format.
+    The data comes in a 'Decode' array with 'label' and 'value'.
     """
-    # NOTE: Since the real endpoint is currently returning 404, we don't know the exact structure
-    # of the CarApis JSON. We will adapt this mapping once support provides the correct endpoint and we see a real payload.
-    # For now, we will map based on our mock fallback in the provider_client.
     data = raw_data.get("data", {})
-    specs = data.get("specs", {})
-    summary = data.get("history_summary", {})
+    decode_list = data.get("Decode", [])
+    
+    # Convert list of dicts to a fast lookup dict
+    decode_dict = {item.get("label", ""): item.get("value", "") for item in decode_list if isinstance(item, dict)}
 
     meta = EspecificacionesVehiculo(
-        marca=specs.get("brand"),
-        modelo=specs.get("model_name"),
-        anio=specs.get("production_year"),
-        fabricacion=specs.get("origin"),
-        motor=specs.get("engine_type"),
+        marca=decode_dict.get("Make"),
+        modelo=decode_dict.get("Model"),
+        anio=decode_dict.get("Model Year"),
+        fabricacion=decode_dict.get("Plant Country", decode_dict.get("Manufacturer Address")),
+        motor=decode_dict.get("Engine Type"),
+        categoria=decode_dict.get("Body"),
+        estilo=decode_dict.get("Drive")
     )
 
     detalle = DetalleEstudio()
     
-    if summary.get("has_accident_history", False):
-        detalle.registrosDeAccidentes.append(RegistroAccidente(fecha="N/A", entidadInformante="CarApis Source"))
-        
-    if summary.get("total_loss_reported", False):
-        detalle.chatarraSalvamentoSeguros.append(RegistroSeguro(fecha="N/A", tipoDeDano="Total Loss"))
-        
-    if summary.get("theft_reported", False):
-        detalle.registrosDeRobos.append(RegistroRobo(tipoDeRegistro="Theft", fechaDeRobo="N/A"))
-
-    es_sin_registros = not (
-        len(detalle.registrosDeAccidentes) > 0 or 
-        len(detalle.chatarraSalvamentoSeguros) > 0 or 
-        len(detalle.registrosDeRobos) > 0
-    )
+    # Vincario's basic decode endpoint might not bring full accident history
+    # If using their advanced endpoints, map them here later
+    # For now, initialize empty lists
+    es_sin_registros = True
 
     return meta, detalle, es_sin_registros
 
 def normalize_provider_data(provider: str, raw_data: Dict[str, Any]) -> Tuple[EspecificacionesVehiculo, DetalleEstudio, bool]:
-    if provider == "CarApis":
-        return normalize_carapis_response(raw_data)
+    if provider == "Vincario":
+        return normalize_vincario_response(raw_data)
     else:
         return normalize_vinaudit_response(raw_data)

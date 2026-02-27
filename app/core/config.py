@@ -17,7 +17,8 @@ class Settings(BaseSettings):
     
     # External APIs
     VINAUDIT_API_KEY: str = ""
-    CARAPIS_API_KEY: str = ""
+    VINCARIO_API_KEY: str = ""
+    VINCARIO_SECRET_KEY: str = ""
 
     model_config = SettingsConfigDict(
         env_file=".env",

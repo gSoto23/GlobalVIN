@@ -7,6 +7,11 @@ from app.api.v1.api import api_router
 from app.db.session import engine, Base
 from app.core.middleware import CorrelationIDMiddleware, setup_exception_handlers
 
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+from app.core.limiter import limiter
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: Create tables in SQLite/Postgres (development only)
@@ -26,6 +31,11 @@ app = FastAPI(
 
 # Setup custom exception handlers for RACSA format
 setup_exception_handlers(app)
+
+# Set app state limiter and add the SlowAPI Exception Handler
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
 
 # Add CorrelationID middleware
 app.add_middleware(CorrelationIDMiddleware)

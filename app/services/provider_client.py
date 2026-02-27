@@ -4,6 +4,10 @@ from typing import Dict, Any, Tuple
 from app.core.config import settings
 from app.services.wmi_detector import get_vehicle_origin_from_vin
 
+import json
+import os
+import hashlib
+
 async def fetch_vinaudit_data(vin: str) -> Dict[str, Any]:
     """
     Integration for VinAudit API (United States).
@@ -12,24 +16,16 @@ async def fetch_vinaudit_data(vin: str) -> Dict[str, Any]:
     if not api_key or api_key.startswith("dummy"):
         # Not configured properly, fallback to mock
         await asyncio.sleep(1.0)
-        return {
-            "success": True,
-            "vehicle": {
-                "make": "FORD MOCK",
-                "model": "F-150 MOCK",
-                "year": 2021,
-                "country": "United States",
-                "engine": "3.5L V6 Turbo",
-            },
-            "history": {
-                "accidents": [],
-                "salvage": False,
-                "theft": False,
-                "liens": 0
-            }
-        }
+        
+        mock_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "mock_vinaudit.json")
+        try:
+            with open(mock_path, "r") as f:
+                mock_data = json.load(f)
+            return {"status": "success", "data": mock_data}
+        except Exception as e:
+            return {"status": "error_fallback", "error": f"Failed to load mock: {str(e)}", "data": {}}
 
-    url = f"https://marketvalue.vinaudit.com/getmarketvalue.php"
+    url = f"https://api.vinaudit.com/v2/pullreport"
     params = {
         "key": api_key,
         "vin": vin,
@@ -40,12 +36,15 @@ async def fetch_vinaudit_data(vin: str) -> Dict[str, Any]:
         try:
             response = await client.get(url, params=params, timeout=15.0)
             response.raise_for_status()
-            return response.json()
+            data = response.json()
+            if not data.get("success"):
+                return {"status": "error_fallback", "error": data.get("error_message", "Unknown error"), "data": {}}
+            return {"status": "success", "data": data}
         except httpx.HTTPError as e:
-            # Fallback to mock data on error for testing purposes
-            return {"success": False, "error": str(e), "vehicle": {"make": "ERROR"}, "history": {}}
+            # Fallback to empty context on error for testing purposes
+            return {"status": "error_fallback", "error": str(e), "data": {}}
 
-import hashlib
+
 
 async def fetch_vincario_data(vin: str) -> Dict[str, Any]:
     """
@@ -86,26 +85,6 @@ async def fetch_vincario_data(vin: str) -> Dict[str, Any]:
             # Fallback to mock data on HTTP failure
             return {"status": "error_fallback", "error": str(e), "data": {}}
 
-async def fetch_vinaudit_data(vin: str) -> Dict[str, Any]:
-    """
-    Integration for VinAudit API (USA).
-    """
-    api_key = settings.VINAUDIT_API_KEY
-    if not api_key or api_key.startswith("dummy"):
-        await asyncio.sleep(1.0)
-        return {"status": "mock", "data": {"vehicle": {"make": "MOCK USA VEHICLE"}}}
-
-    # VinAudit standard endpoint
-    url = f"https://api.vinaudit.com/v2/pullreport"
-    params = {"key": api_key, "vin": vin, "format": "json"}
-
-    async with httpx.AsyncClient() as client:
-        try:
-            response = await client.get(url, params=params, timeout=30.0)
-            response.raise_for_status()
-            return response.json()
-        except httpx.HTTPError as e:
-            return {"status": "error_fallback", "error": str(e), "data": {}}
 
 async def orchestrate_vin_search(vin: str) -> Tuple[Dict[str, Any], str]:
     """

@@ -13,35 +13,45 @@ def normalize_vinaudit_response(raw_data: Dict[str, Any]) -> Tuple[Especificacio
     Transforms VinAudit JSON into the required format.
     Returns: (EspecificacionesVehiculo, DetalleEstudio, es_estudio_sin_registros)
     """
-    vehicle_info = raw_data.get("vehicle", {})
-    history_info = raw_data.get("history", {})
+    data = raw_data.get("data", {})
+    attributes = data.get("attributes", {})
 
     meta = EspecificacionesVehiculo(
-        marca=vehicle_info.get("make"),
-        modelo=vehicle_info.get("model"),
-        anio=vehicle_info.get("year"),
-        categoria=vehicle_info.get("trim"),
-        fabricacion=vehicle_info.get("country"),
-        motor=vehicle_info.get("engine"),
-        estilo=vehicle_info.get("body_style"),
+        marca=attributes.get("make"),
+        modelo=attributes.get("model"),
+        anio=attributes.get("year"),
+        categoria=attributes.get("trim"),
+        fabricacion=attributes.get("made_in", attributes.get("country")),
+        motor=attributes.get("engine"),
+        estilo=attributes.get("style", attributes.get("body_style")),
     )
 
     detalle = DetalleEstudio()
     
-    # Fake mapping some accidents if they exist
-    for acc in history_info.get("accidents", []):
+    for acc in data.get("accidents", []):
         detalle.registrosDeAccidentes.append(RegistroAccidente(
-            fecha="N/A", entidadInformante="N/A"
+            fecha=acc.get("date", "N/A"),
+            entidadInformante=acc.get("source_name", "N/A")
         ))
         
-    if history_info.get("salvage", False):
+    for salv in data.get("salvage", []):
         detalle.chatarraSalvamentoSeguros.append(RegistroSeguro(
-            fecha="N/A", tipoDeDano="Salvage", entidadInformante="Insurance"
+            fecha=salv.get("date", "N/A"),
+            tipoDeDano=salv.get("primary_damage", "Salvage"),
+            entidadInformante=salv.get("sale_document", "Insurance")
         ))
         
-    if history_info.get("theft", False):
+    for jsi in data.get("jsi", []):
+        detalle.chatarraSalvamentoSeguros.append(RegistroSeguro(
+            fecha=jsi.get("date", "N/A"),
+            tipoDeDano=jsi.get("record_type", "Junk/Salvage"),
+            entidadInformante=jsi.get("brander_name", "N/A")
+        ))
+        
+    for theft in data.get("thefts", []):
         detalle.registrosDeRobos.append(RegistroRobo(
-            tipoDeRegistro="Theft", fechaDeRobo="N/A"
+            tipoDeRegistro=theft.get("record_type", "Theft"),
+            fechaDeRobo=theft.get("date", "N/A")
         ))
 
     # Determine if it's a completely clean record
@@ -49,7 +59,7 @@ def normalize_vinaudit_response(raw_data: Dict[str, Any]) -> Tuple[Especificacio
         len(detalle.registrosDeAccidentes) > 0 or 
         len(detalle.chatarraSalvamentoSeguros) > 0 or 
         len(detalle.registrosDeRobos) > 0 or
-        history_info.get("liens", 0) > 0
+        len(data.get("lien", [])) > 0
     )
 
     return meta, detalle, es_sin_registros

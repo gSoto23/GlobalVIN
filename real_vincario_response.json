@@ -1,0 +1,62 @@
+Testing Vincario URL: https://api.vincario.com/3.2/07388061bedf/885092a998/decode/KNAFU4A27A5377106.json
+Status: 200
+{
+  "price": 0,
+  "price_currency": "USD",
+  "balance": {
+    "API VIN Decode": 19,
+    "API Stolen Check": 5,
+    "API Vehicle Market Value": 5,
+    "API OEM VIN Lookup": 0,
+    "API OCR VIN Scanner": 5
+  },
+  "decode": [
+    {
+      "label": "VIN",
+      "value": "KNAFU4A27A5377106"
+    },
+    {
+      "label": "Vehicle ID",
+      "value": 8603
+    },
+    {
+      "id": 60,
+      "label": "Make",
+      "value": "Kia"
+    },
+    {
+      "label": "Make ID",
+      "value": 60
+    },
+    {
+      "id": 19533,
+      "label": "Model",
+      "value": "Forte"
+    },
+    {
+      "label": "Model Year",
+      "value": 2010
+    },
+    {
+      "id": 4,
+      "label": "Product Type",
+      "value": "Car"
+    },
+    {
+      "id": 28,
+      "label": "Body",
+      "value": "Sedan/Saloon"
+    },
+    {
+      "label": "Series",
+      "value": "GLS"
+    },
+    {
+      "label": "Engine Displacement (ccm)",
+      "value": 2000
+    },
+    {
+      "id": 8,
+      "label": "Fuel Type - Primary",
+      "value": "G...
+[TRUNCATED]

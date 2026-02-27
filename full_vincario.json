@@ -1,0 +1,139 @@
+{
+  "price": 0,
+  "price_currency": "USD",
+  "balance": {
+    "API VIN Decode": 19,
+    "API Stolen Check": 5,
+    "API Vehicle Market Value": 5,
+    "API OEM VIN Lookup": 0,
+    "API OCR VIN Scanner": 5
+  },
+  "decode": [
+    {
+      "label": "VIN",
+      "value": "KNAFU4A27A5377106"
+    },
+    {
+      "label": "Vehicle ID",
+      "value": 8603
+    },
+    {
+      "id": 60,
+      "label": "Make",
+      "value": "Kia"
+    },
+    {
+      "label": "Make ID",
+      "value": 60
+    },
+    {
+      "id": 19533,
+      "label": "Model",
+      "value": "Forte"
+    },
+    {
+      "label": "Model Year",
+      "value": 2010
+    },
+    {
+      "id": 4,
+      "label": "Product Type",
+      "value": "Car"
+    },
+    {
+      "id": 28,
+      "label": "Body",
+      "value": "Sedan/Saloon"
+    },
+    {
+      "label": "Series",
+      "value": "GLS"
+    },
+    {
+      "label": "Engine Displacement (ccm)",
+      "value": 2000
+    },
+    {
+      "id": 8,
+      "label": "Fuel Type - Primary",
+      "value": "Gasoline"
+    },
+    {
+      "id": 2,
+      "label": "Transmission",
+      "value": "Automatic"
+    },
+    {
+      "label": "Manufacturer",
+      "value": "Kia Motors Corp"
+    },
+    {
+      "label": "Manufacturer Address",
+      "value": "781-1 Soha Dong Kwangmyung-Shi, Kyungki-Do 423-701, Seoul Korea"
+    },
+    {
+      "label": "Plant City",
+      "value": "HWASUNG"
+    },
+    {
+      "label": "Plant Company",
+      "value": "Kia Motors Corporation"
+    },
+    {
+      "label": "Plant Country",
+      "value": "SOUTH KOREA"
+    },
+    {
+      "label": "Make Logo",
+      "value": "https://api.vincario.com/img/make/kia.svg"
+    },
+    {
+      "label": "Number of Doors",
+      "value": 4
+    },
+    {
+      "label": "Number of Seats",
+      "value": "5"
+    },
+    {
+      "label": "Steering Type",
+      "value": "Steering rack and pinion"
+    },
+    {
+      "label": "Rear Overhang (mm)",
+      "value": 1039
+    },
+    {
+      "label": "Front Overhang (mm)",
+      "value": 902
+    },
+    {
+      "label": "Approach Angle (\u00b0)",
+      "value": 13.9
+    },
+    {
+      "label": "Departure Angle (\u00b0)",
+      "value": 18.9
+    },
+    {
+      "label": "Weight Empty (kg)",
+      "value": 1345
+    },
+    {
+      "label": "Max Weight (kg)",
+      "value": 1730
+    },
+    {
+      "label": "ABS",
+      "value": 1
+    },
+    {
+      "label": "Check Digit",
+      "value": "7"
+    },
+    {
+      "label": "Sequential Number",
+      "value": "377106"
+    }
+  ]
+}

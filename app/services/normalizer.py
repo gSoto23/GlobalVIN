@@ -70,9 +70,9 @@ def normalize_vincario_response(raw_data: Dict[str, Any]) -> Tuple[Especificacio
         modelo=decode_dict.get("Model"),
         anio=decode_dict.get("Model Year"),
         fabricacion=decode_dict.get("Plant Country", decode_dict.get("Manufacturer Address")),
-        motor=decode_dict.get("Engine Type"),
+        motor=f"{decode_dict.get('Engine Displacement (ccm)', '')}cc {decode_dict.get('Fuel Type - Primary', '')}".strip(),
         categoria=decode_dict.get("Body"),
-        estilo=decode_dict.get("Drive")
+        estilo=decode_dict.get("Transmission")
     )
 
     detalle = DetalleEstudio()

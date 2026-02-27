@@ -8,7 +8,7 @@ SECRET_KEY = "393729ddf8"
 
 # Test VIN (Using a standard test VIN or KNA dummy)
 # Vincario requires VIN to be uppercase
-VIN = "KNA12345678TESTVI".upper()
+VIN = "KNAFU4A27A5377106".upper()
 # Or we can test with a known good VIN if requested
 
 ID = "decode"
@@ -26,7 +26,7 @@ try:
     with urllib.request.urlopen(req, timeout=10) as response:
         print(f"Status: {response.status}")
         data = json.loads(response.read().decode('utf-8'))
-        print(json.dumps(data, indent=2)[:1000] + "...\n[TRUNCATED]")
+        print(json.dumps(data, indent=2))
 except urllib.error.HTTPError as e:
     print(f"HTTP Error: {e.code}")
     print(e.read().decode('utf-8'))

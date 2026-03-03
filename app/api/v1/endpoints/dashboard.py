@@ -172,3 +172,42 @@ async def get_dashboard_errors(
         })
         
     return {"errors": error_list}
+
+@router.get("/health")
+async def get_system_health(db: AsyncSession = Depends(get_db)):
+    """
+    Checks the status of the Database and External Providers.
+    Returns: green (All Good), orange (Slow/Down Providers), red (DB Error).
+    """
+    import httpx
+    import asyncio
+    
+    status = "green"
+    message = "Sistema En Línea"
+    
+    # 1. Check Database
+    try:
+        await db.execute(select(1))
+    except Exception as e:
+        return {"color": "red", "message": "Sistema Caído (BD)"}
+        
+    # 2. Check Providers (Concurrent Pings)
+    vinaudit_url = "https://api.vinaudit.com"
+    vincario_url = "https://api.vincario.com"
+    
+    async def ping(url):
+        try:
+            async with httpx.AsyncClient(timeout=3.0) as client:
+                resp = await client.get(url)
+                # We just care that it responded, even a 403 or 401 is "up"
+                return True
+        except:
+            return False
+
+    results = await asyncio.gather(ping(vinaudit_url), ping(vincario_url))
+    
+    if not all(results):
+        status = "orange"
+        message = "Proveedores Lentos"
+        
+    return {"color": status, "message": message}

@@ -229,17 +229,17 @@
                                     {% if log.status_code == 200 %}
                                     <span
                                         class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold text-green-700 bg-green-100">
-                                        Autorizado (200)
+                                        200
                                     </span>
                                     {% elif log.status_code == 404 %}
                                     <span
                                         class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold text-yellow-700 bg-yellow-100">
-                                        No Encontrado (404)
+                                        404
                                     </span>
                                     {% else %}
                                     <span
                                         class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold text-red-700 bg-red-100">
-                                        Fallo ({{ log.status_code }})
+                                        {{ log.status_code }}
                                     </span>
                                     {% endif %}
                                 </td>

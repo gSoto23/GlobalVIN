@@ -13,23 +13,17 @@ async def fetch_vinaudit_data(vin: str) -> Dict[str, Any]:
     Integration for VinAudit API (United States).
     """
     api_key = settings.VINAUDIT_API_KEY
-    if not api_key or api_key.startswith("dummy"):
-        # Not configured properly, fallback to mock
-        await asyncio.sleep(1.0)
-        
-        mock_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "mock_vinaudit.json")
-        try:
-            with open(mock_path, "r") as f:
-                mock_data = json.load(f)
-            return {"status": "success", "data": mock_data}
-        except Exception as e:
-            return {"status": "error_fallback", "error": f"Failed to load mock: {str(e)}", "data": {}}
+    if not api_key:
+        return {"status": "error_fallback", "error": "API Key not configured", "data": {}}
 
     url = f"https://api.vinaudit.com/v2/pullreport"
     params = {
         "key": api_key,
         "vin": vin,
-        "format": "json"
+        "format": "json",
+        "user": settings.VINAUDIT_USER,
+        "pass": settings.VINAUDIT_PASS,
+        "mode": "prod"
     }
 
     async with httpx.AsyncClient() as client:

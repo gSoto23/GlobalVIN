@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     
     # External APIs
     VINAUDIT_API_KEY: str = ""
+    VINAUDIT_USER: str = ""
+    VINAUDIT_PASS: str = ""
     VINCARIO_API_KEY: str = ""
     VINCARIO_SECRET_KEY: str = ""
 

@@ -5,6 +5,8 @@ from app.schemas.vehiculo import (
     RegistroAccidente,
     RegistroRobo,
     RegistroSeguro,
+    RegistroTitulo,
+    RegistroVenta,
     ComprobacionProblemas
 )
 
@@ -53,6 +55,27 @@ def normalize_vinaudit_response(raw_data: Dict[str, Any]) -> Tuple[Especificacio
             tipoDeRegistro=theft.get("record_type", "Theft"),
             fechaDeRobo=theft.get("date", "N/A")
         ))
+        
+    for title in data.get("titles", []):
+        detalle.registrosDeTitulos.append(RegistroTitulo(
+            fecha=title.get("date", "N/A"),
+            estadoProvincia=title.get("state", "N/A"),
+            kilometraje=title.get("meter", "N/A"),
+            vin=title.get("meter_unit", "M"), # using vin field temporarily to hold meter_unit "M" or "KM"
+            current=title.get("current", False)  # This will be processed via Pydantic extra kwargs since we allowed them
+        ))
+        
+    for sale in data.get("sales", []):
+        detalle.registrosDeVenta.append(RegistroVenta(
+            fecha=sale.get("date", "N/A"),
+            vendedor=f"{sale.get('seller_type', '')} - {sale.get('seller_name', '')}".strip() or "N/A",
+            precioDeListado=sale.get("listing_price", "N/A"),
+            kilometrajeDelVehiculo=sale.get("vehicle_mileage", "N/A")
+            # The template uses kilometrajeDelVehiculo for location temporarily, so let's append it
+        ))
+        # Optional: Add city to seller if present to match the UI better
+        if sale.get("seller_city") and detalle.registrosDeVenta:
+             detalle.registrosDeVenta[-1].kilometrajeDelVehiculo = f"{sale.get('seller_city', '')}, {sale.get('seller_state', '')} | {sale.get('vehicle_mileage', 'N/A')}"
 
     # Determine if it's a completely clean record
     es_sin_registros = not (

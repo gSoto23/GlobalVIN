@@ -31,3 +31,10 @@ __pycache__/
 
 # Project specific
 uvicorn.log
+
+# Test Scripts
+test_*.py
+generate_*.py
+*.html
+*_response.json
+test_normalize_output.txt

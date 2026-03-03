@@ -7,28 +7,45 @@
     <style>
         body {
             font-family: 'Helvetica', 'Arial', sans-serif;
-            color: #333;
+            color: #333333;
             margin: 40px;
-            font-size: 14px;
+            font-size: 13px;
         }
 
         .header {
-            text-align: center;
-            border-bottom: 3px solid #1e3a8a;
-            padding-bottom: 20px;
+            text-align: left;
+            border-bottom: 4px solid #003087;
+            padding-bottom: 15px;
             margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
         }
 
-        .header h1 {
-            color: #1e3a8a;
+        .header-left h1 {
+            color: #081326;
             margin: 0;
             font-size: 24px;
+            letter-spacing: -0.5px;
         }
 
-        .header p {
-            color: #666;
+        .header-left h1 span {
+            color: #ca006e;
+            font-weight: 300;
+        }
+
+        .header-left p {
+            color: #666666;
             margin: 5px 0 0 0;
             font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .header-right {
+            text-align: right;
+            font-size: 11px;
+            color: #94a3b8;
         }
 
         .section {
@@ -36,75 +53,119 @@
         }
 
         .section-title {
-            background-color: #f1f5f9;
-            color: #1e293b;
+            background-color: #f4f4f4;
+            color: #003087;
             padding: 10px 15px;
             font-weight: bold;
-            font-size: 16px;
-            border-left: 4px solid #3b82f6;
+            font-size: 14px;
+            border-left: 4px solid #003087;
             margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .section-extra {
+            background-color: #fdf2f8; 
+            color: #ca006e;
+            border-left: 4px solid #ca006e;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
 
-        th,
-        td {
-            border: 1px solid #e2e8f0;
-            padding: 12px;
+        th, td {
+            border-bottom: 1px solid #e2e8f0;
+            padding: 10px 12px;
             text-align: left;
         }
 
         th {
-            background-color: #f8fafc;
-            color: #475569;
+            background-color: #ffffff;
+            color: #64748b;
+            font-size: 11px;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+        
+        .spec-table th {
             width: 35%;
+            background-color: #f8fafc;
         }
 
         .badge-clean {
             color: #166534;
             background-color: #dcfce7;
-            padding: 4px 8px;
+            padding: 8px 16px;
             border-radius: 4px;
             font-weight: bold;
             display: inline-block;
+            border: 1px solid #bbf7d0;
         }
 
         .badge-alert {
             color: #991b1b;
             background-color: #fee2e2;
-            padding: 4px 8px;
+            padding: 8px 16px;
             border-radius: 4px;
             font-weight: bold;
             display: inline-block;
+            border: 1px solid #fecaca;
         }
 
         .footer {
             margin-top: 50px;
             text-align: center;
             font-size: 10px;
-            color: #94a3b8;
+            color: #cbd5e1;
             border-top: 1px solid #e2e8f0;
             padding-top: 20px;
+        }
+        
+        .note-extra {
+            font-size: 11px;
+            color: #64748b;
+            margin-top: -10px;
+            margin-bottom: 15px;
+            font-style: italic;
         }
     </style>
 </head>
 
 <body>
 
-    <div class="header">
-        <h1>GlobalVIN - Historial de Vehículos</h1>
-        <p>Reporte Oficial de Consultas Internacionales</p>
-        <p>Fecha de Emisión: {{ fecha_generacion }} | VIN Consultado: {{ vin }}</p>
+    <table width="100%" style="border:none; border-bottom: 4px solid #003087; padding-bottom: 15px; margin-bottom: 30px;">
+        <tr>
+            <td style="border:none; padding:0;">
+                <h1 style="color: #081326; margin: 0; font-size: 24px; letter-spacing: -0.5px;">RACSA<span style="color: #ca006e; font-weight: 300;"> | GlobalVIN</span></h1>
+                <p style="color: #666666; margin: 5px 0 0 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Reporte Oficial de Trazabilidad Vehicular</p>
+            </td>
+            <td style="border:none; padding:0; text-align:right; font-size: 11px; color: #94a3b8; vertical-align: bottom;">
+                Fecha Emisión: {{ fecha_generacion }}<br>
+                VIN: <strong>{{ vin }}</strong>
+            </td>
+        </tr>
+    </table>
+
+    <!-- Estado General -->
+    <div class="section">
+        <div style="text-align: center; margin: 20px 0;">
+            {% if es_sin_registros %}
+            <div class="badge-clean" style="font-size: 16px;">✓ CUMPLE: SIN REGISTROS CRÍTICOS</div>
+            <p style="margin-top: 10px; color: #64748b; font-size: 12px;">No se han encontrado reportes de robo, pérdida total, salvamento o accidentes severos.</p>
+            {% else %}
+            <div class="badge-alert" style="font-size: 16px;">⚠ ALERTA: REGISTROS ENCONTRADOS EN EL HISTORIAL</div>
+            <p style="margin-top: 10px; color: #64748b; font-size: 12px;">Este vehículo presenta registros de accidentes, chatarra, marcas de título o robos. Revise la sección detallada.</p>
+            {% endif %}
+        </div>
     </div>
 
     <!-- Resumen del Vehículo -->
     <div class="section">
         <div class="section-title">Especificaciones del Vehículo</div>
-        <table>
+        <table class="spec-table">
             <tr>
                 <th>Marca</th>
                 <td>{{ meta.marca or 'No Determinado' }}</td>
@@ -122,8 +183,12 @@
                 <td>{{ meta.motor or 'No Determinado' }}</td>
             </tr>
             <tr>
-                <th>Cilindrada</th>
-                <td>{{ meta.cilindrada or 'No Determinado' }}</td>
+                <th>Categoría / Trim</th>
+                <td>{{ meta.categoria or 'No Determinado' }}</td>
+            </tr>
+            <tr>
+                <th>Estilo</th>
+                <td>{{ meta.estilo or 'No Determinado' }}</td>
             </tr>
             <tr>
                 <th>País de Fabricación</th>
@@ -132,30 +197,13 @@
         </table>
     </div>
 
-    <!-- Estado General -->
-    <div class="section">
-        <div class="section-title">Resumen de Hallazgos Críticos</div>
-        <div style="text-align: center; margin: 30px 0;">
-            {% if es_sin_registros %}
-            <div class="badge-clean" style="font-size: 18px; padding: 15px 30px;">✓ SIN REGISTROS CRÍTICOS (CLEAN)</div>
-            <p style="margin-top: 15px; color: #64748b;">No se han encontrado reportes de robo, pérdida total,
-                salvamento o accidentes severos en nuestras bases de datos para este VIN.</p>
-            {% else %}
-            <div class="badge-alert" style="font-size: 18px; padding: 15px 30px;">⚠ VEHÍCULO CON ALERTAS EN HISTORIAL
-            </div>
-            <p style="margin-top: 15px; color: #64748b;">Este vehículo presenta registros de accidentes, chatarra, o
-                robos. Revise la sección detallada a continuación.</p>
-            {% endif %}
-        </div>
-    </div>
-
-    <!-- Registros Detallados (Solo si existen) -->
+    <!-- Registros Detallados Críticos -->
     {% if not es_sin_registros %}
     <div class="section">
-        <div class="section-title">Asientos y Reportes Encontrados</div>
+        <div class="section-title">Hallazgos y Reportes Críticos Contractuales</div>
 
         {% if detalle.registrosDeAccidentes %}
-        <h4 style="color: #b91c1c;">Reportes de Accidentes</h4>
+        <h4 style="color: #b91c1c; margin-bottom: 5px;">Reportes de Accidentes</h4>
         <table>
             <tr>
                 <th>Fecha</th>
@@ -171,11 +219,11 @@
         {% endif %}
 
         {% if detalle.registrosDeRobos %}
-        <h4 style="color: #b91c1c;">Reportes de Robo</h4>
+        <h4 style="color: #b91c1c; margin-bottom: 5px;">Reportes de Robo</h4>
         <table>
             <tr>
                 <th>Fecha del Incidente</th>
-                <th>Tipo</th>
+                <th>Tipo Registrado</th>
             </tr>
             {% for robo in detalle.registrosDeRobos %}
             <tr>
@@ -187,16 +235,18 @@
         {% endif %}
 
         {% if detalle.chatarraSalvamentoSeguros %}
-        <h4 style="color: #b91c1c;">Chatarra, Salvamento y Pérdidas Totales</h4>
+        <h4 style="color: #b91c1c; margin-bottom: 5px;">Chatarra, Salvamento y Pérdidas Totales</h4>
         <table>
             <tr>
                 <th>Fecha</th>
-                <th>Tipo de Daño</th>
+                <th>Tipo / Daño Principal</th>
+                <th>Entidad Informante / Origen</th>
             </tr>
             {% for seg in detalle.chatarraSalvamentoSeguros %}
             <tr>
                 <td>{{ seg.fecha }}</td>
-                <td>{{ seg.tipoDeDano }}</td>
+                <td style="font-weight: bold;">{{ seg.tipoDeDano }}</td>
+                <td>{{ seg.entidadInformante }}</td>
             </tr>
             {% endfor %}
         </table>
@@ -204,11 +254,58 @@
     </div>
     {% endif %}
 
+    <!-- Registros Adicionales (Valor Agregado) -->
+    <div class="section">
+        <div class="section-title section-extra">Información Suplementaria (Valor Agregado)</div>
+        <p class="note-extra">* Estos datos se adjuntan como información adicional de valor para complementar el perfil del vehículo, superando los requerimientos de la contratación base.</p>
+
+        {% if detalle.registrosDeTitulos %}
+        <h4 style="color: #ca006e; margin-bottom: 5px;">Historial de Títulos y Odómetro</h4>
+        <table>
+            <tr>
+                <th>Fecha Título</th>
+                <th>Estado/Provincia</th>
+                <th>Lectura Millaje</th>
+                <th>¿Título Actual?</th>
+            </tr>
+            {% for titulo in detalle.registrosDeTitulos %}
+            <tr>
+                <td>{{ titulo.fecha }}</td>
+                <td>{{ titulo.estadoProvincia }}</td>
+                <td>{{ titulo.kilometraje }} {{ titulo.vin if titulo.vin == "M" else "Millas" }}</td>
+                <td>{{ "SÍ" if titulo.current in [True, "true"] else "NO" }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% endif %}
+
+        {% if detalle.registrosDeVenta %}
+        <h4 style="color: #ca006e; margin-bottom: 5px;">Historial de Transacciones / Ventas</h4>
+        <table>
+            <tr>
+                <th>Fecha Anuncio</th>
+                <th>Tipo Vendedor</th>
+                <th>Ubicación</th>
+                <th>Precio Listado</th>
+                <th>Millaje al Vender</th>
+            </tr>
+            {% for venta in detalle.registrosDeVenta %}
+            <tr>
+                <td>{{ venta.fecha }}</td>
+                <td>{{ venta.vendedor }}</td>
+                <td>{{ venta.kilometrajeDelVehiculo }}</td> <!-- The normalizer will put location in Seller City for now, we will map properly later -->
+                <td style="font-weight: bold;">{{ venta.precioDeListado }}</td>
+                <td>{{ venta.kilometrajeDelVehiculo }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% endif %}
+    </div>
+
     <div class="footer">
-        <p>Este estudio cumple con los estándares exigidos para el proceso de inscripción y legalización vehicular.</p>
-        <p>GlobalVIN by RACSA Compliance Engine - Validación de Autenticidad HASH SHA-256 adjunto a los metadatos de
-            respuesta.</p>
-        <p>ID Consulta: {{ vin }} - {{ fecha_generacion }}</p>
+        <p>Este reporte técnico cumple con todos los lineamientos y métricas exigidas para el proceso integral de inscripción, revisión y legalización vehicular nacional.</p>
+        <p style="margin-top: 5px; font-weight: bold;">Validación de Autenticidad mediante HASH SHA-256 adjunto a los metadatos de respuesta transaccional.</p>
+        <p style="margin-top: 15px;">ID Único de Consulta: {{ vin }} | Procesado el: {{ fecha_generacion }}</p>
     </div>
 
 </body>

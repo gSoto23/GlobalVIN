@@ -23,12 +23,14 @@ El sistema está construido sobre una arquitectura moderna, asíncrona y orienta
 El sistema cumple rigurosamente con los requisitos contractuales y de negocio a través del siguiente flujo de operación cuando un cliente B2B o interfaz consulta un VIN:
 
 ### A. Detección Inteligente de Mercado (Enrutador WMI)
-En lugar de forzar al usuario a saber de dónde viene el auto, el módulo `wmi_detector.py` extrae los primeros 3 caracteres del VIN (World Manufacturer Identifier) y mediante diccionarios geográficos determina si el vehículo fue ensamblado o comercializado para el mercado de Norteamérica (USA/Canadá) o para el mercado Euro-Asiático (ej. Corea del Sur, Japón, Alemania).
+En lugar de forzar al usuario a saber de dónde viene el auto, el módulo `wmi_detector.py` toma los **primeros 3 caracteres** del VIN alfanumérico. Este bloque se conoce internacionalmente como el **WMI** (World Manufacturer Identifier).
+- El sistema cuenta con un diccionario interno geográfico. Si el VIN comienza con ciertas letras (como la **"K"** para Corea del Sur, p. ej. `KNA` para KIA o `KMH` para Hyundai), identifica inmediatamente que la manufactura es asiática.
+- Si comienza con los números **1, 4 o 5** (Estados Unidos), **2** (Canadá) o **3** (México), el sistema detecta de fábrica que el flujo histórico de este auto está centralizado en el estándar americano.
 
-### B. Enrutamiento a Proveedor Estratégico
-Basado en lo anterior, el sistema consume el API de suscripción más adecuado para maximizar el margen de ganancia y la precisión de los datos:
-- **Mercado Norteamericano:** Se enruta hacia **VinAudit** (`api.vinaudit.com`).
-- **Mercado Coreano / Internacional:** Se enruta hacia **Vincario** (`api.vincario.com`).
+### B. Enrutamiento a Proveedor Estratégico (Optimización de Costos)
+Una vez resuelto el mapa geográfico por el WMI, el sistema toma una decisión transaccional para maximizar la calidad del reporte y minimizar el gasto:
+- **Mercado Norteamericano (VINs 1-5):** La consulta se enruta hacia el API de **VinAudit** (`api.vinaudit.com`). Las aseguradoras y el NMVTIS (Títulos Salvage) de USA están directamente centralizados aquí.
+- **Mercado Coreano / Internacional (VINs K*, J*, W*):** La consulta se enruta a través de la red Europea de **Vincario** (`api.vincario.com`), la cual funciona mediante la inyección de hashes SHA1. Si usáramos VinAudit para un KIA importado directamente desde Seúl sin pasar por USA, el saldo se gastaría y el reporte vendría vacío.
 
 ### C. Sistema de Ahorro y Caché (Protección de Costos)
 **Requisito Contractual:** Evitar pagar múltiples veces por un mismo reporte si distintos usuarios consultan el mismo VIN en un periodo corto de tiempo.

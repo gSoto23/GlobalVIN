@@ -101,6 +101,29 @@
         .dataTables_wrapper {
             padding: 0 1.5rem 1.5rem 1.5rem;
         }
+
+        /* Fix bottom pagination layout to prevent wrapping */
+        .dataTables_wrapper .dataTables_info,
+        .dataTables_wrapper .dataTables_paginate {
+            float: none !important;
+            padding-top: 0 !important;
+            margin-top: 0 !important;
+        }
+
+        .dt-bottom-layout {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: 1.5rem;
+            width: 100%;
+        }
+
+        @media (min-width: 768px) {
+            .dt-bottom-layout {
+                flex-direction: row;
+            }
+        }
     </style>
 </head>
 
@@ -506,6 +529,7 @@
 
             // Initialize DataTables with minimal Spanish language settings
             $('#logsTable').DataTable({
+                "dom": '<"mb-4 flex justify-end"f>rt<"dt-bottom-layout text-xs text-gray-500"ip>',
                 "pageLength": 10,
                 "lengthChange": false, // Hide "show x entries"
                 "order": [], // Keep the original backend ordering (newest first)

@@ -68,6 +68,16 @@ async def get_dashboard_ui(
     )
     total_errores = await db.scalar(stmt_errors) or 0
     
+    # Provider counts for Doughnut Chart
+    stmt_vincario = select(func.count(Trazabilidad.id)).where(
+        and_(where_clause, Trazabilidad.proveedor == "Vincario")
+    )
+    stmt_vinaudit = select(func.count(Trazabilidad.id)).where(
+        and_(where_clause, Trazabilidad.proveedor == "VinAudit")
+    )
+    count_vincario = await db.scalar(stmt_vincario) or 0
+    count_vinaudit = await db.scalar(stmt_vinaudit) or 0
+    
     # 5. Recent Logs (All logs with joined VehiculoEstudio for PDF url)
     stmt_logs = (
         select(Trazabilidad, VehiculoEstudio.url_pdf)
@@ -101,7 +111,9 @@ async def get_dashboard_ui(
                 "total": total_consultas,
                 "externas": consultas_externas,
                 "cache": consultas_cache,
-                "errores": total_errores
+                "errores": total_errores,
+                "vincario": count_vincario,
+                "vinaudit": count_vinaudit
             },
             "logs": recent_logs,
             "current_start": start_date or "",

@@ -31,10 +31,16 @@ __pycache__/
 
 # Project specific
 uvicorn.log
+storage/
+.test_token
 
-# Test Scripts
+# Test Scripts and Mock Data
 test_*.py
 generate_*.py
+simulate_request.py
+get_full_vincario.py
 *.html
 *_response.json
+real_vincario_response.json
+full_vincario.json
 test_normalize_output.txt

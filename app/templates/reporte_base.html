@@ -30,7 +30,7 @@
         }
 
         .header-left h1 span {
-            color: #ca006e;
+            color: #00a0df;
             font-weight: 300;
         }
 
@@ -63,11 +63,11 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
-        
+
         .section-extra {
-            background-color: #fdf2f8; 
-            color: #ca006e;
-            border-left: 4px solid #ca006e;
+            background-color: #f0f9ff;
+            color: #00a0df;
+            border-left: 4px solid #00a0df;
         }
 
         table {
@@ -76,7 +76,8 @@
             margin-bottom: 15px;
         }
 
-        th, td {
+        th,
+        td {
             border-bottom: 1px solid #e2e8f0;
             padding: 10px 12px;
             text-align: left;
@@ -89,7 +90,7 @@
             text-transform: uppercase;
             font-weight: bold;
         }
-        
+
         .spec-table th {
             width: 35%;
             background-color: #f8fafc;
@@ -123,7 +124,7 @@
             border-top: 1px solid #e2e8f0;
             padding-top: 20px;
         }
-        
+
         .note-extra {
             font-size: 11px;
             color: #64748b;
@@ -136,13 +137,18 @@
 
 <body>
 
-    <table width="100%" style="border:none; border-bottom: 4px solid #003087; padding-bottom: 15px; margin-bottom: 30px;">
+    <table width="100%"
+        style="border:none; border-bottom: 4px solid #003087; padding-bottom: 15px; margin-bottom: 30px;">
         <tr>
             <td style="border:none; padding:0;">
-                <h1 style="color: #081326; margin: 0; font-size: 24px; letter-spacing: -0.5px;">RACSA<span style="color: #ca006e; font-weight: 300;"> | GlobalVIN</span></h1>
-                <p style="color: #666666; margin: 5px 0 0 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Reporte Oficial de Trazabilidad Vehicular</p>
+                <h1 style="color: #081326; margin: 0; font-size: 24px; letter-spacing: -0.5px;">RACSA<span
+                        style="color: #00a0df; font-weight: 300;"> | GlobalVIN</span></h1>
+                <p
+                    style="color: #666666; margin: 5px 0 0 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">
+                    Reporte Oficial de Trazabilidad Vehicular</p>
             </td>
-            <td style="border:none; padding:0; text-align:right; font-size: 11px; color: #94a3b8; vertical-align: bottom;">
+            <td
+                style="border:none; padding:0; text-align:right; font-size: 11px; color: #94a3b8; vertical-align: bottom;">
                 Fecha Emisión: {{ fecha_generacion }}<br>
                 VIN: <strong>{{ vin }}</strong>
             </td>
@@ -154,10 +160,12 @@
         <div style="text-align: center; margin: 20px 0;">
             {% if es_sin_registros %}
             <div class="badge-clean" style="font-size: 16px;">✓ CUMPLE: SIN REGISTROS CRÍTICOS</div>
-            <p style="margin-top: 10px; color: #64748b; font-size: 12px;">No se han encontrado reportes de robo, pérdida total, salvamento o accidentes severos.</p>
+            <p style="margin-top: 10px; color: #64748b; font-size: 12px;">No se han encontrado reportes de robo, pérdida
+                total, salvamento o accidentes severos.</p>
             {% else %}
             <div class="badge-alert" style="font-size: 16px;">⚠ ALERTA: REGISTROS ENCONTRADOS EN EL HISTORIAL</div>
-            <p style="margin-top: 10px; color: #64748b; font-size: 12px;">Este vehículo presenta registros de accidentes, chatarra, marcas de título o robos. Revise la sección detallada.</p>
+            <p style="margin-top: 10px; color: #64748b; font-size: 12px;">Este vehículo presenta registros de
+                accidentes, chatarra, marcas de título o robos. Revise la sección detallada.</p>
             {% endif %}
         </div>
     </div>
@@ -257,10 +265,11 @@
     <!-- Registros Adicionales (Valor Agregado) -->
     <div class="section">
         <div class="section-title section-extra">Información Suplementaria (Valor Agregado)</div>
-        <p class="note-extra">* Estos datos se adjuntan como información adicional de valor para complementar el perfil del vehículo, superando los requerimientos de la contratación base.</p>
+        <p class="note-extra">* Estos datos se adjuntan como información adicional de valor para complementar el perfil
+            del vehículo, superando los requerimientos de la contratación base.</p>
 
         {% if detalle.registrosDeTitulos %}
-        <h4 style="color: #ca006e; margin-bottom: 5px;">Historial de Títulos y Odómetro</h4>
+        <h4 style="color: #00a0df; margin-bottom: 5px;">Historial de Títulos y Odómetro</h4>
         <table>
             <tr>
                 <th>Fecha Título</th>
@@ -280,7 +289,7 @@
         {% endif %}
 
         {% if detalle.registrosDeVenta %}
-        <h4 style="color: #ca006e; margin-bottom: 5px;">Historial de Transacciones / Ventas</h4>
+        <h4 style="color: #00a0df; margin-bottom: 5px;">Historial de Transacciones / Ventas</h4>
         <table>
             <tr>
                 <th>Fecha Anuncio</th>
@@ -293,7 +302,8 @@
             <tr>
                 <td>{{ venta.fecha }}</td>
                 <td>{{ venta.vendedor }}</td>
-                <td>{{ venta.kilometrajeDelVehiculo }}</td> <!-- The normalizer will put location in Seller City for now, we will map properly later -->
+                <td>{{ venta.kilometrajeDelVehiculo }}</td>
+                <!-- The normalizer will put location in Seller City for now, we will map properly later -->
                 <td style="font-weight: bold;">{{ venta.precioDeListado }}</td>
                 <td>{{ venta.kilometrajeDelVehiculo }}</td>
             </tr>
@@ -303,8 +313,10 @@
     </div>
 
     <div class="footer">
-        <p>Este reporte técnico cumple con todos los lineamientos y métricas exigidas para el proceso integral de inscripción, revisión y legalización vehicular nacional.</p>
-        <p style="margin-top: 5px; font-weight: bold;">Validación de Autenticidad mediante HASH SHA-256 adjunto a los metadatos de respuesta transaccional.</p>
+        <p>Este reporte técnico cumple con todos los lineamientos y métricas exigidas para el proceso integral de
+            inscripción, revisión y legalización vehicular nacional.</p>
+        <p style="margin-top: 5px; font-weight: bold;">Validación de Autenticidad mediante HASH SHA-256 adjunto a los
+            metadatos de respuesta transaccional.</p>
         <p style="margin-top: 15px;">ID Único de Consulta: {{ vin }} | Procesado el: {{ fecha_generacion }}</p>
     </div>
 

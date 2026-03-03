@@ -35,10 +35,26 @@ async def get_dashboard_ui(request: Request, db: AsyncSession = Depends(get_db))
     stmt_errors = select(func.count(Trazabilidad.id)).where(Trazabilidad.status_code != 200)
     total_errores = await db.scalar(stmt_errors) or 0
     
-    # 5. Recent Logs (Last 15)
-    stmt_logs = select(Trazabilidad).order_by(Trazabilidad.fecha_consulta.desc()).limit(15)
+    # 5. Recent Logs (All logs with joined VehiculoEstudio for PDF url)
+    stmt_logs = (
+        select(Trazabilidad, VehiculoEstudio.url_pdf)
+        .outerjoin(VehiculoEstudio, Trazabilidad.identificacion == VehiculoEstudio.identificacion)
+        .order_by(Trazabilidad.fecha_consulta.desc())
+    )
     result_logs = await db.execute(stmt_logs)
-    recent_logs = result_logs.scalars().all()
+    
+    # Pack into a list of dicts for Jinja
+    recent_logs = []
+    for tz, pdf_url in result_logs:
+        recent_logs.append({
+            "fecha_consulta": tz.fecha_consulta,
+            "identificacion": tz.identificacion,
+            "proveedor": tz.proveedor,
+            "llamada_externa": tz.llamada_externa,
+            "status_code": tz.status_code,
+            "mensaje_error": tz.mensaje_error,
+            "url_pdf": pdf_url
+        })
 
     return templates.TemplateResponse(
         "dashboard.html",
@@ -60,15 +76,15 @@ async def get_metrics_json(db: AsyncSession = Depends(get_db)):
     Returns metrics as JSON for potential charting or external tracking.
     """
     # Simply reusing basic counts for now
-    stmt_carapis = select(func.count(Trazabilidad.id)).where(Trazabilidad.proveedor == "CarApis")
+    stmt_vincario = select(func.count(Trazabilidad.id)).where(Trazabilidad.proveedor == "Vincario")
     stmt_vinaudit = select(func.count(Trazabilidad.id)).where(Trazabilidad.proveedor == "VinAudit")
     
-    carapis_calls = await db.scalar(stmt_carapis) or 0
+    vincario_calls = await db.scalar(stmt_vincario) or 0
     vinaudit_calls = await db.scalar(stmt_vinaudit) or 0
 
     return {
         "providers": {
-            "CarApis": carapis_calls,
+            "Vincario": vincario_calls,
             "VinAudit": vinaudit_calls
         }
     }

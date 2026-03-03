@@ -32,13 +32,16 @@ Una vez resuelto el mapa geográfico por el WMI, el sistema toma una decisión t
 - **Mercado Norteamericano (VINs 1-5):** La consulta se enruta hacia el API de **VinAudit** (`api.vinaudit.com`). Las aseguradoras y el NMVTIS (Títulos Salvage) de USA están directamente centralizados aquí.
 - **Mercado Coreano / Internacional (VINs K*, J*, W*):** La consulta se enruta a través de la red Europea de **Vincario** (`api.vincario.com`), la cual funciona mediante la inyección de hashes SHA1. Si usáramos VinAudit para un KIA importado directamente desde Seúl sin pasar por USA, el saldo se gastaría y el reporte vendría vacío.
 
-### C. Sistema de Ahorro y Caché (Protección de Costos)
-**Requisito Contractual:** Evitar pagar múltiples veces por un mismo reporte si distintos usuarios consultan el mismo VIN en un periodo corto de tiempo.
-- **Funcionamiento:** Antes de gastar saldo en una llamada externa (Llamada Mayorista), el sistema busca en la Base de Datos Local (`VehiculoEstudio`). Si existe un reporte físico generado con menos de **30 días de antigüedad**, el sistema omite el API externa, y retorna de manera instantánea el reporte en Caché (Costo $0 - 100% Margen de Ganancia Institucional).
+### C. Sistema de Ahorro y Caché (Protección de Costos frente a Peticiones Repetidas)
+**Requisito Contractual:** Evitar pagar múltiples veces por un mismo reporte si distintos usuarios o interfaces consultan el mismo VIN en un periodo corto de tiempo.
+- **Funcionamiento (Hit de Caché):** Cada vez que ingresa una petición, el sistema busca en la Base de Datos Local (`VehiculoEstudio` o `Trazabilidad`) usando el VIN exacto. Si encuentra que ya se emitió un reporte para ese vehículo hace **menos de 30 días**, el orquestador aborta inmediatamente cualquier intento de conexión a VinAudit o Vincario.
+- **Manejo Financiero y Operativo:** En lugar de hacer una nueva "Llamada Mayorista" cobrable, el sistema simplemente recicla el último JSON normalizado de la base de datos y le devuelve al usuario instantáneamente el reporte en memoria (o la URL del PDF pre-existente). Esto representa una transacción de Costo $0 para RACSA, generando un 100% de margen de ganancia si se le factura a ese cliente B2B.
 
-### D. Normalización de Datos y Generación Documental
-Debido a que Vincario y VinAudit devuelven el JSON en esquemas completamente distintos, el módulo `normalizer.py` aplana y traduce la respuesta a un único modelo estándar de negocio.
-Tras normalizar, se genera en caliente un **Acuse de Recibo en formato PDF** formal, que incluye los datos técnicos, título de salvamento, lecturas de odómetro, e insignias de agua de los proveedores y RACSA.
+### D. Normalización de Datos y Generación Documental (PDF Automático)
+Debido a que Vincario y VinAudit devuelven el JSON en esquemas completamente distintos, el módulo `normalizer.py` aplana y traduce la respuesta original a un único modelo estándar de negocio.
+- **Creación en Caliente del PDF:** Tras normalizar los datos en Pydantic, el backend inyecta las variables en una plantilla HTML semántica prediseñada mediante el motor Jinja2.
+- **Motor WebKit:** Luego, se invoca a la librería base `wkhtmltopdf` (alojada en el sistema operativo del servidor). Esta herramienta renderiza de forma invisible el HTML como si fuera un navegador web real (WebKit engine) y lo "imprime" en un archivo PDF binario vectorial.
+- **Resultado Final:** Se entrega un Acuse de Recibo en formato PDF, el cual incluye fotografías, datos técnicos, títulos de salvamento (NMVTIS estadounidense), incidentes reportados, y las insignias de agua y seguridad (logos) de RACSA y el respectivo proveedor de datos. Este archivo se guarda de forma persistente estáticamente para ser descargado o enlazado desde un S3 sin necesidad de reconstruirse.
 
 ---
 

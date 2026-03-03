@@ -180,6 +180,15 @@
                         class="bg-racsa-blue text-white text-xs font-bold uppercase px-3 py-1.5 rounded hover:bg-blue-800 transition-colors">
                         Filtrar
                     </button>
+                    <!-- CSV Export Button -->
+                    <button type="button" onclick="exportCSV()"
+                        class="flex items-center bg-green-600 text-white text-xs font-bold uppercase px-3 py-1.5 rounded hover:bg-green-700 transition-colors">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                        </svg>
+                        Exportar CSV
+                    </button>
                     {% if current_start or current_end %}
                     <a href="/api/v1/dashboard"
                         class="text-xs text-gray-400 hover:text-gray-600 underline px-2">Limpiar</a>
@@ -249,6 +258,8 @@
                                 <th scope="col" class="px-6 py-4 font-bold">Criterio Búsqueda</th>
                                 <th scope="col" class="px-6 py-4 font-bold">Origen Datos</th>
                                 <th scope="col" class="px-6 py-4 font-bold text-center">Resultado</th>
+                                <th scope="col" class="px-6 py-4 font-bold">IP Origen</th>
+                                <th scope="col" class="px-6 py-4 font-bold">Usuario B2B</th>
                                 <th scope="col" class="px-6 py-4 font-bold text-center">Acciones</th>
                             </tr>
                         </thead>
@@ -296,6 +307,13 @@
                                         {{ log.status_code }}
                                     </span>
                                     {% endif %}
+                                </td>
+                                <td class="px-6 py-4 font-mono text-xs text-gray-500">
+                                    {{ log.ip_origen or "-" }}
+                                </td>
+                                <td class="px-6 py-4 text-xs font-medium text-gray-700 max-w-[150px] truncate"
+                                    title="{{ log.usuario }}">
+                                    {{ log.usuario or "-" }}
                                 </td>
                                 <td class="px-6 py-4 text-center">
                                     {% if log.status_code == 200 and log.url_pdf %}
@@ -533,6 +551,9 @@
                 "pageLength": 10,
                 "lengthChange": false, // Hide "show x entries"
                 "order": [], // Keep the original backend ordering (newest first)
+                "columnDefs": [
+                    { "orderable": false, "targets": [4, 5, 6] } // Disable ordering on User, IP, Actions
+                ],
                 "language": {
                     "search": "🔍 Buscar:",
                     "zeroRecords": "No se encontraron logs coincidentes",
@@ -595,6 +616,16 @@
                 console.error('Error cargando métricas:', error);
             }
         });
+
+        function exportCSV() {
+            // Pick up current active filters from the hidden inputs/URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const startStr = urlParams.get('start_date') || '';
+            const endStr = urlParams.get('end_date') || '';
+
+            // Trigger download via window location
+            window.location.href = `/api/v1/dashboard/export?start_date=${startStr}&end_date=${endStr}`;
+        }
     </script>
 </body>
 

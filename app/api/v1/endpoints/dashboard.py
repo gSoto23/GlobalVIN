@@ -88,7 +88,9 @@ async def get_dashboard_ui(
             "status_code": tz.status_code,
             "mensaje_error": tz.mensaje_error,
             "url_pdf": pdf_url,
-            "endpoint": tz.endpoint
+            "endpoint": tz.endpoint,
+            "ip_origen": tz.ip_origen,
+            "usuario": tz.usuario
         })
 
     return templates.TemplateResponse(
@@ -168,10 +170,92 @@ async def get_dashboard_errors(
             "proveedor": error.proveedor or "Local",
             "endpoint": error.endpoint,
             "status_code": error.status_code,
-            "mensaje": error.mensaje_error
+            "mensaje": error.mensaje_error,
+            "ip_origen": error.ip_origen,
+            "usuario": error.usuario
         })
         
     return {"errors": error_list}
+    
+@router.get("/export")
+async def export_dashboard_csv(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Exports the main Traceability table to a CSV file.
+    """
+    import io
+    import csv
+    from fastapi.responses import StreamingResponse
+    
+    filters = []
+    
+    if start_date:
+        try:
+            sd = datetime.strptime(start_date, "%Y-%m-%d")
+            filters.append(Trazabilidad.fecha_consulta >= sd)
+        except ValueError:
+            pass
+            
+    if end_date:
+        try:
+            ed = datetime.strptime(end_date, "%Y-%m-%d").replace(hour=23, minute=59, second=59)
+            filters.append(Trazabilidad.fecha_consulta <= ed)
+        except ValueError:
+            pass
+            
+    where_clause = and_(*filters) if filters else True
+
+    stmt = (
+        select(Trazabilidad)
+        .where(where_clause)
+        .order_by(Trazabilidad.fecha_consulta.desc())
+    )
+    result = await db.execute(stmt)
+    logs = result.scalars().all()
+
+    # Create an in-memory string buffer
+    output = io.StringIO()
+    writer = csv.writer(output, delimiter=',', quoting=csv.QUOTE_MINIMAL)
+
+    # Write headers
+    writer.writerow([
+        "Fecha UTC", 
+        "Criterio_Busqueda", 
+        "Origen_Datos", 
+        "Llamada_Externa", 
+        "Codigo_Http", 
+        "Usuario_B2B", 
+        "IP_Origen", 
+        "Endpoint", 
+        "Mensaje_Error"
+    ])
+
+    for log in logs:
+        fecha_str = log.fecha_consulta.strftime("%d/%m/%Y %H:%M:%S") if log.fecha_consulta else ""
+        writer.writerow([
+            fecha_str,
+            log.identificacion or "",
+            log.proveedor or "DATABASE",
+            "SI" if log.llamada_externa else "NO",
+            log.status_code,
+            log.usuario or "N/A",
+            log.ip_origen or "N/A",
+            log.endpoint or "",
+            log.mensaje_error or ""
+        ])
+
+    output.seek(0)
+    
+    filename = f"trazabilidad_racsa_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
 
 @router.get("/health")
 async def get_system_health(db: AsyncSession = Depends(get_db)):

@@ -35,3 +35,5 @@ class Trazabilidad(Base):
     llamada_externa = Column(Boolean, default=False) # True if we hit VinAudit/CarStat
     proveedor = Column(String(50), nullable=True) # VinAudit, CarStat, Cache
     mensaje_error = Column(String(500), nullable=True)
+    ip_origen = Column(String(50), nullable=True)
+    usuario = Column(String(100), nullable=True)

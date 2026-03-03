@@ -42,7 +42,9 @@ async def check_estudio_existencia(
         endpoint="/api/v1/vehiculos/estudios/existencia",
         status_code=200,
         llamada_externa=False,
-        proveedor="Cache" if estudio else None
+        proveedor="Cache" if estudio else None,
+        ip_origen=request.client.host if request.client else None,
+        usuario=token_data.get("sub")
     )
     db.add(trazabilidad)
     await db.commit()
@@ -119,7 +121,9 @@ async def get_estudio_completo(
             # Failed to fetch from external provider
             trazabilidad = Trazabilidad(
                 identificacion=identificacion, endpoint="/api/v1/vehiculos/estudios",
-                status_code=502, llamada_externa=True, proveedor=proveedor_usado, mensaje_error=str(e)
+                status_code=502, llamada_externa=True, proveedor=proveedor_usado, mensaje_error=str(e),
+                ip_origen=request.client.host if request.client else None,
+                usuario=token_data.get("sub")
             )
             db.add(trazabilidad)
             await db.commit()
@@ -177,7 +181,9 @@ async def get_estudio_completo(
         endpoint="/api/v1/vehiculos/estudios",
         status_code=200,
         llamada_externa=if_llamada_externa,
-        proveedor=proveedor_usado
+        proveedor=proveedor_usado,
+        ip_origen=request.client.host if request.client else None,
+        usuario=token_data.get("sub")
     )
     db.add(trazabilidad)
     await db.commit()

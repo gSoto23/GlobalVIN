@@ -202,7 +202,7 @@
                             {% for log in logs %}
                             <tr class="hover:bg-gray-50 transition-colors">
                                 <td class="px-6 py-4 text-gray-500 whitespace-nowrap text-xs">{{
-                                    log.fecha_consulta.strftime('%Y-%m-%d %H:%M:%S') if log.fecha_consulta else 'N/A' }}
+                                    log.fecha_consulta.strftime('%d%m%Y %H:%M:%S') if log.fecha_consulta else 'N/A' }}
                                 </td>
                                 <td class="px-6 py-4 font-bold text-racsa-dark">{{ log.identificacion }}</td>
                                 <td class="px-6 py-4">
@@ -260,7 +260,7 @@
                                         data-vin="{{ log.identificacion }}"
                                         data-provider="{{ log.proveedor or 'Base Datos Local' }}"
                                         data-status="{{ log.status_code }}" data-endpoint="{{ log.endpoint or 'N/A' }}"
-                                        data-date="{{ log.fecha_consulta.strftime('%Y-%m-%d %H:%M:%S') if log.fecha_consulta else 'N/A' }}"
+                                        data-date="{{ log.fecha_consulta.strftime('%d%m%Y %H:%M:%S') if log.fecha_consulta else 'N/A' }}"
                                         data-msg="{{ log.mensaje_error | escape }}">
                                         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

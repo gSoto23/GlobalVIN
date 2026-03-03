@@ -49,6 +49,8 @@ Se desarrolló una interfaz de monitoreo accesible en `/api/v1/dashboard` exclus
 - **Bitácora Oficial de Trazabilidad:** Un componente de lista inmutable que guarda el registro absoluto de cada consulta realizada (exitosa o fallida).
   - Incluye acceso directo en un click al `.pdf` emitido de cada transacción.
   - Ofrece una modalidad de **Auditoría Técnica (Ver Detalle)** para aislar códigos HTTP 400 y 500 arrojados por los proveedores, útiles para justificaciones de caída de línea mediante captura de la exepción y el Endpoint específico de la falla.
+  - **Trazabilidad B2B y Auditoría IP:** El proxy enruta de manera automática la dirección de origen HTTP (`request.client.host`) y el ID del usuario desencriptado desde el Token JWT para inyectarlo directo a la bitácora, previniendo fuga de consultas en cuentas comerciales.
+- **Exportación Contable CSV:** Un submódulo integrado al filtro histórico permite la extracción inmediata de toda la bitácora visible (filtrada por rangos dinámicos en UTC) hacia un formato de hoja de cálculo estándar separado por comas, listo para la conciliación manual de fin de mes o entrega de reportes a la Contraloría.
 
 ---
 
@@ -76,3 +78,100 @@ Para el mantenimiento del equipo de ingeniería institucional, se dejan prevista
 - **Migración a Base de Datos Enterprise:** Al utilizar `app.db.session` y las migraciones de `SQLAlchemy`, si los 3,000 reportes estimados mensuales exceden la carga en el futuro, no se requiere refactorizar ninguna lógica de negocio; basta con actualizar la URL `DATABASE_URL=postgresql+asyncpg://user:pass@host/db`.
 - **Nuevo Proveedor Regional:** Si en el futuro RACSA adquiere un tercer proveedor (p. ej. para flota institucional en Centroamérica), basta con modificar la condición silogística en `app/services/wmi_detector.py` y crear un `provider_client.py` que herede la firma estructural base.
 - **Integración DevOps:** El proyecto incluye un archivo estricto de `.gitignore` limpio, preparado para ser empaquetado como contenedor de Docker y ejecutado bajo un orquestador moderno (como Kubernetes o AWS ECS), escalando los contenedores de FastAPI horizontalmente gracias a su naturaleza asíncrona "Stateless".
+
+---
+
+## 7. Anexos: Referencia de API de Proveedores (Ejemplos JSON)
+
+El sistema lidia internamente con dos esquemas muy diferentes que son "aplanados" (Normalizados) y guardados en SQLite. A continuación se muestran recortes de exactitud estructural de cómo ingresan los datos desde el exterior.
+
+### A. VinAudit (Vehículos Mercado Estadounidense / Canadiense)
+
+Basado en el endpoint formal de reportes extensos. Es capaz de delinear historial de kilometraje, subastas de aseguradoras y alertas graves.
+
+```json
+{
+  "status": "success",
+  "data": {
+    "vin": "JTHBK1GG3E2131249",
+    "attributes": {
+      "make": "Lexus",
+      "model": "ES",
+      "year": "2014",
+      "engine": "3.5L V6",
+      "made_in": "Japan",
+      "steering_type": "Rack & Pinion"
+    },
+    "titles": [
+      {
+        "state": "CA",
+        "date": "2024-11-08",
+        "meter": "102984",
+        "meter_unit": "M",
+        "current": true
+      }
+    ],
+    "checks": [
+      {
+        "brander_name": "CALIFORNIA",
+        "brand_title": "Salvage: Damage or Not Specified",
+        "date": "2022-12-14",
+        "brander_type": "State"
+      }
+    ],
+    "salvage": [
+      {
+        "date": "2022-12-21",
+        "type": "salvageAuction",
+        "location": "ACE - Carson CA",
+        "primary_damage": "Rear",
+        "title_type": "Salvage certificate California"
+      }
+    ]
+  }
+}
+```
+
+### B. Vincario (Vehículos Mercado Coreano / Europeo)
+
+Usado prioritariamente para descubrir características técnicas de chasis y especificaciones directas de ensambladora. El sistema aplica SHA1 dinámico para crear un `control_sum` en cada HTTP Request enviada.
+
+```json
+{
+  "control_sum": "d41d8cd98f",
+  "decode": [
+    {
+      "label": "Make",
+      "value": "Kia"
+    },
+    {
+      "label": "Model",
+      "value": "Sorento"
+    },
+    {
+      "label": "Model Year",
+      "value": "2021"
+    },
+    {
+      "label": "Plant Country",
+      "value": "South Korea"
+    },
+    {
+      "label": "Body",
+      "value": "SUV"
+    },
+    {
+      "label": "Engine Displacement (ccm)",
+      "value": "2497"
+    },
+    {
+      "label": "Fuel Type - Primary",
+      "value": "Gasoline"
+    },
+    {
+      "label": "Transmission",
+      "value": "8-Speed Automatic"
+    }
+  ]
+}
+```

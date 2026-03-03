@@ -53,7 +53,8 @@ async def get_dashboard_ui(request: Request, db: AsyncSession = Depends(get_db))
             "llamada_externa": tz.llamada_externa,
             "status_code": tz.status_code,
             "mensaje_error": tz.mensaje_error,
-            "url_pdf": pdf_url
+            "url_pdf": pdf_url,
+            "endpoint": tz.endpoint
         })
 
     return templates.TemplateResponse(

@@ -255,8 +255,13 @@
                                         PDF
                                     </a>
                                     {% elif log.status_code != 200 and log.mensaje_error %}
-                                    <button onclick="showError('{{ log.mensaje_error | escape }}')"
-                                        class="inline-flex items-center justify-center px-3 py-1 border border-transparent text-xs font-medium rounded text-racsa-orange bg-orange-100 hover:bg-orange-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-racsa-orange transition-colors">
+                                    <button
+                                        class="btn-error-detail inline-flex items-center justify-center px-3 py-1 border border-transparent text-xs font-medium rounded text-racsa-orange bg-orange-100 hover:bg-orange-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-racsa-orange transition-colors"
+                                        data-vin="{{ log.identificacion }}"
+                                        data-provider="{{ log.proveedor or 'Base Datos Local' }}"
+                                        data-status="{{ log.status_code }}" data-endpoint="{{ log.endpoint or 'N/A' }}"
+                                        data-date="{{ log.fecha_consulta.strftime('%Y-%m-%d %H:%M:%S') if log.fecha_consulta else 'N/A' }}"
+                                        data-msg="{{ log.mensaje_error | escape }}">
                                         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -286,15 +291,35 @@
     </main>
 
     <script>
-        function showError(msg) {
+        $(document).on('click', '.btn-error-detail', function () {
+            const btn = $(this);
+            const vin = btn.data('vin');
+            const provider = btn.data('provider');
+            const status = btn.data('status');
+            const endpoint = btn.data('endpoint');
+            const date = btn.data('date');
+            const msg = btn.data('msg');
+
             Swal.fire({
-                title: 'Detalle de Incidencia',
-                text: msg,
+                title: 'Detalle Técnico de Incidencia',
+                html: `
+                    <div class="text-left text-sm space-y-3 mt-4 text-gray-700">
+                        <p><span class="font-bold text-racsa-blue uppercase text-xs mr-2">Criterio Búsqueda (VIN):</span> <span>${vin}</span></p>
+                        <p><span class="font-bold text-racsa-blue uppercase text-xs mr-2">Proveedor Afectado:</span> <span>${provider}</span></p>
+                        <p><span class="font-bold text-racsa-blue uppercase text-xs mr-2">Endpoint Local:</span> <span class="font-mono text-xs">${endpoint}</span></p>
+                        <p><span class="font-bold text-racsa-blue uppercase text-xs mr-2">Fecha Registro (UTC):</span> <span>${date}</span></p>
+                        
+                        <div class="bg-red-50 text-red-700 p-4 rounded border border-red-200 mt-6 text-xs">
+                            <span class="font-bold uppercase mb-1 block">Trazabilidad Técnica [${status}]</span>
+                            <span class="font-mono break-all">${msg}</span>
+                        </div>
+                    </div>
+                `,
                 icon: 'error',
                 confirmButtonColor: '#003087',
                 confirmButtonText: 'Cerrar'
             });
-        }
+        });
 
         $(document).ready(function () {
             // Initialize DataTables with minimal Spanish language settings

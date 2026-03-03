@@ -44,7 +44,13 @@ Tras normalizar, se genera en caliente un **Acuse de Recibo en formato PDF** for
 
 Se desarrolló una interfaz de monitoreo accesible en `/api/v1/dashboard` exclusiva para el personal administrativo y de soporte técnico.
 
-- **Indicador de Salud en Tiempo Real ("Sistema En Línea"):** Un demonio en Javascript hace "ping" constante e invisible al endpoint de `/health`, el cual revisa concurrentemente la latencia asíncrona hacia los servidores de la Base de Datos Local, VinAudit (USA) y Vincario (Corea). Indica con colores semafóricos caídas globales o lentitud de los proveedores antes de que los clientes lo reporten.
+- **Indicador de Salud en Tiempo Real ("Sistema En Línea"):** 
+  Ubicado en la esquina superior derecha del navbar, este indicador funciona como un **Health Check automatizado y asíncrono**. Un demonio en Javascript hace "ping" constante e invisible al endpoint `/health` cada 10 segundos.
+  - El backend ejecuta una doble verificación asíncrona (`asyncio.gather`): primero evalúa la conectividad a la base de datos local SQLite, y simultáneamente dispara pings HTTP hacia los dominios maestros de **VinAudit (USA)** y **Vincario (Corea)** limitados por un timeout estricto de 3.0 segundos.
+  - **Comportamiento Visual Semafórico:**
+    - 🟢 **Verde ("Sistema En Línea"):** La base de datos local funciona y ambos proveedores externos respondieron al ping a tiempo.
+    - 🟠 **Naranja ("Proveedores Lentos"):** La base de datos funciona, pero al menos uno de los proveedores internacionales tardó más de 3 segundos en responder o denegó la conexión. Alerta preventiva de lentitud externa.
+    - 🔴 **Rojo ("Sistema Caído / Error BD"):** El motor local de SQLite se encuentra inaccesible, bloqueado o corrupto. Es el estado más crítico.
 - **Métricas Contractuales:** Filtro de consultas por fecha (DD/MM/YYYY) que grafica cuántas peticiones totales ingresaron, cuántas representaron gasto real de factura externa y cuántas fueron ahorros directos por cachés.
 - **Bitácora Oficial de Trazabilidad:** Un componente de lista inmutable que guarda el registro absoluto de cada consulta realizada (exitosa o fallida).
   - Incluye acceso directo en un click al `.pdf` emitido de cada transacción.
